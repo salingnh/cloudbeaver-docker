@@ -80,6 +80,7 @@ RUN set -eux; \
 
 COPY config/driver-policy.json /tooling/driver-policy.json
 COPY scripts/generate_full_driver_pack.py /tooling/generate_full_driver_pack.py
+COPY scripts/preflight_driver_pack.py /tooling/preflight_driver_pack.py
 
 RUN python3 /tooling/generate_full_driver_pack.py \
       --cloudbeaver /work/cloudbeaver \
@@ -87,9 +88,20 @@ RUN python3 /tooling/generate_full_driver_pack.py \
       --policy /tooling/driver-policy.json \
       --report /tmp/full-drivers-report.json
 
+# Validate every generated driver module before entering the expensive full
+# CloudBeaver reactor build. Broken Maven coordinates/transitives are removed
+# from the generated pack and recorded in the report instead of failing the image.
+# Use the same Maven cache for preflight and the full build so validation also
+# warms dependencies for the next step.
+RUN --mount=type=cache,id=cloudbeaver-m2,target=/root/.m2 \
+    python3 /tooling/preflight_driver_pack.py \
+      --cloudbeaver /work/cloudbeaver \
+      --report /tmp/full-drivers-report.json \
+      --maven mvn
+
 # CloudBeaver's build script builds the DBeaver platform, backend and frontend.
-RUN --mount=type=cache,target=/root/.m2 \
-    --mount=type=cache,target=/root/.yarn \
+RUN --mount=type=cache,id=cloudbeaver-m2,target=/root/.m2 \
+    --mount=type=cache,id=cloudbeaver-yarn,target=/root/.yarn \
     cd /work/cloudbeaver/deploy \
     && ./build.sh \
     && test -x ./cloudbeaver/run-cloudbeaver-server.sh \
