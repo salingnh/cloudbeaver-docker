@@ -3,7 +3,6 @@
   "require_jdbc_url": true,
   "require_prebundle_mapping": true,
   "require_maven_runtime": true,
-  "skip_external_runtime_jars": true,
   "allow_floating_versions": true,
   "exclude_full_driver_ids": [],
   "exclude_providers": [],
