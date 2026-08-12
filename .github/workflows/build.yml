@@ -11,6 +11,14 @@ on:
         description: DBeaver branch, tag, or commit
         required: false
         default: devel
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile
+      - config/**
+      - scripts/**
+      - .github/workflows/build.yml
   pull_request:
     paths:
       - Dockerfile
