@@ -9,6 +9,7 @@ ARG CLOUDBEAVER_REF=devel
 ARG DBEAVER_REF=devel
 ARG DBEAVER_COMMON_REF=devel
 ARG DBEAVER_JDBC_LIBSQL_REF=devel
+ARG AVATICA_VERSION=1.28.0
 ARG NODE_VERSION=22.15.0
 ARG MAVEN_VERSION=3.9.16
 
@@ -64,6 +65,18 @@ RUN set -eux; \
     clone_ref https://github.com/dbeaver/dbeaver.git dbeaver "$DBEAVER_REF"; \
     clone_ref https://github.com/dbeaver/dbeaver-common.git dbeaver-common "$DBEAVER_COMMON_REF"; \
     clone_ref https://github.com/dbeaver/dbeaver-jdbc-libsql.git dbeaver-jdbc-libsql "$DBEAVER_JDBC_LIBSQL_REF"
+
+# DBeaver devel currently declares Avatica as RELEASE[1.42.0], but Apache
+# Avatica has its own release line (1.28.0 is the current release). 1.42.0 is
+# a Calcite release and does not exist for avatica-core, so patch this upstream
+# definition before generating the CloudBeaver driver pack. Keep it configurable
+# so the workaround can be removed or changed when upstream fixes the definition.
+RUN set -eux; \
+    plugin=/work/dbeaver/plugins/org.jkiss.dbeaver.ext.generic/plugin.xml; \
+    if grep -Fq 'org.apache.calcite.avatica:avatica-core:RELEASE[1.42.0]' "$plugin"; then \
+      sed -i "s#org.apache.calcite.avatica:avatica-core:RELEASE\[1\.42\.0\]#org.apache.calcite.avatica:avatica-core:RELEASE[${AVATICA_VERSION}]#g" "$plugin"; \
+    fi; \
+    grep -F 'org.apache.calcite.avatica:avatica-core:' "$plugin"
 
 COPY config/driver-policy.json /tooling/driver-policy.json
 COPY scripts/generate_full_driver_pack.py /tooling/generate_full_driver_pack.py
