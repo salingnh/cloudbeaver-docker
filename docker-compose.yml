@@ -1,0 +1,35 @@
+services:
+  cloudbeaver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CLOUDBEAVER_REF: ${CLOUDBEAVER_REF:-devel}
+        DBEAVER_REF: ${DBEAVER_REF:-devel}
+        DBEAVER_COMMON_REF: ${DBEAVER_COMMON_REF:-devel}
+        DBEAVER_JDBC_LIBSQL_REF: ${DBEAVER_JDBC_LIBSQL_REF:-main}
+        NODE_VERSION: ${NODE_VERSION:-22.15.0}
+        MAVEN_VERSION: ${MAVEN_VERSION:-3.9.16}
+        BASE_JAVA_TAG: ${BASE_JAVA_TAG:-stable}
+    image: ${CLOUDBEAVER_IMAGE:-cloudbeaver-full:local}
+    container_name: cloudbeaver-full
+    restart: unless-stopped
+
+    ports:
+      - "${CLOUDBEAVER_PORT:-8978}:8978"
+
+    environment:
+      CLOUDBEAVER_DRIVERS_LOCATION: /opt/cloudbeaver/drivers
+      CLOUDBEAVER_APP_ANONYMOUS_ACCESS_ENABLED: "true"
+      CLOUDBEAVER_APP_SUPPORTS_CUSTOM_CONNECTIONS: "true"
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx2g -XX:+UseG1GC}
+
+    volumes:
+      - cloudbeaver-workspace:/opt/cloudbeaver/workspace
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  cloudbeaver-workspace:
+    name: cloudbeaver-full-workspace
