@@ -1,0 +1,6 @@
+.git
+.github
+build
+.build
+workspace
+*.log
