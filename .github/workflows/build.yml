@@ -1,0 +1,44 @@
+name: Build CloudBeaver full JDBC image
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloudbeaver_ref:
+        description: CloudBeaver branch, tag, or commit
+        required: false
+        default: devel
+      dbeaver_ref:
+        description: DBeaver branch, tag, or commit
+        required: false
+        default: devel
+  pull_request:
+    paths:
+      - Dockerfile
+      - config/**
+      - scripts/**
+      - .github/workflows/build.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: cloudbeaver-full:ci
+          build-args: |
+            CLOUDBEAVER_REF=${{ inputs.cloudbeaver_ref || 'devel' }}
+            DBEAVER_REF=${{ inputs.dbeaver_ref || 'devel' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
